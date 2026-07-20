@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPA Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Poppins:wght@500;600;700&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg: #10131a;
+  --panel: #171c26;
+  --panel-2: #1d2330;
+  --border: #262e3d;
+  --text: #e7ebf3;
+  --text-dim: #8b94a7;
+  --accent: #2dd4a7;
+  --accent-dim: #1f8a6f;
+  --danger: #e25c5c;
+  --gold: #e8b34d;
+  --purple: #b380e8;
+  --radius: 12px;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);}
+::selection{background:var(--accent);color:#08110d;}
+a{color:inherit;}
+.app{display:flex;min-height:100vh;}
+.sidebar{width:230px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;}
+.brand{font-family:var(--font-display);font-weight:700;font-size:19px;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px;padding:6px 8px 22px;}
+.brand .dot{width:10px;height:10px;border-radius:3px;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;color:var(--text-dim);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:2px;transition:.15s;}
+.nav-item:hover{background:var(--panel-2);color:var(--text);}
+.nav-item.active{background:var(--panel-2);color:var(--accent);}
+.nav-item .ico{width:18px;text-align:center;font-size:15px;}
+.sidebar-foot{margin-top:auto;padding:10px 8px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono);}
+.main{flex:1;padding:28px 34px;max-width:1200px;}
+h1.page-title{font-family:var(--font-display);font-size:24px;margin:0 0 4px;letter-spacing:-0.01em;}
+.page-sub{color:var(--text-dim);font-size:13px;margin:0 0 22px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.grid{display:grid;gap:16px;}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:2fr 1fr;}
+.grid-2{grid-template-columns:1fr 1fr;}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3,.grid-2{grid-template-columns:1fr;}}
+.kpi-label{font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.kpi-value{font-family:var(--font-mono);font-size:26px;font-weight:600;}
+.kpi-value.pos{color:var(--accent);}
+.kpi-value.neg{color:var(--danger);}
+.kpi-sub{font-size:11px;color:var(--text-dim);margin-top:6px;}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.pill{padding:7px 14px;border-radius:20px;background:var(--panel-2);border:1px solid var(--border);font-size:12.5px;cursor:pointer;color:var(--text-dim);font-weight:500;}
+.pill.active{background:var(--accent);border-color:var(--accent);color:#08110d;}
+.date-range{display:flex;gap:8px;align-items:center;margin-left:auto;font-size:12.5px;color:var(--text-dim);}
+input[type=date],input[type=text],input[type=number],select,textarea{
+  background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-family:var(--font-body);font-size:13.5px;width:100%;
+}
+input[type=date]{color-scheme:dark;}
+label{font-size:12px;color:var(--text-dim);margin-bottom:6px;display:block;font-weight:500;}
+.field{margin-bottom:14px;}
+.btn{background:var(--accent);color:#08110d;border:none;padding:10px 18px;border-radius:8px;font-weight:600;font-size:13.5px;cursor:pointer;font-family:var(--font-body);}
+.btn:hover{filter:brightness(1.08);}
+.btn.secondary{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn.danger{background:var(--danger);color:#fff;}
+.btn.small{padding:6px 11px;font-size:12px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:var(--text-dim);font-weight:500;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--border);}
+td{padding:10px 10px;border-bottom:1px solid var(--border);}
+tr:hover td{background:rgba(255,255,255,0.02);}
+.house-chip{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;}
+.house-chip .sw{width:8px;height:8px;border-radius:2px;display:inline-block;}
+.mono{font-family:var(--font-mono);}
+.pos{color:var(--accent);}
+.neg{color:var(--danger);}
+.section-title{font-family:var(--font-display);font-size:15px;font-weight:600;margin:0 0 14px;}
+.modal-bg{position:fixed;inset:0;background:rgba(6,8,12,0.7);display:none;align-items:center;justify-content:center;z-index:50;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:420px;max-width:92vw;max-height:88vh;overflow:auto;}
+.modal h3{margin:0 0 16px;font-family:var(--font-display);font-size:17px;}
+.row{display:flex;gap:10px;}
+.row > *{flex:1;}
+.empty{color:var(--text-dim);font-size:13px;padding:30px 0;text-align:center;}
+.house-card{border:1px solid var(--border);border-radius:10px;padding:14px 16px;background:var(--panel-2);}
+.house-card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.tag-auto{font-size:10.5px;background:var(--gold);color:#2a1c00;padding:2px 7px;border-radius:10px;font-weight:600;}
+.notes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+.note-card{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:14px;min-height:120px;display:flex;flex-direction:column;}
+.note-card .title{font-weight:600;font-size:14px;margin-bottom:6px;}
+.note-card .body{font-size:13px;color:var(--text-dim);white-space:pre-wrap;flex:1;}
+.note-card .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:11px;color:var(--text-dim);}
+.icon-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:13px;padding:3px 6px;border-radius:5px;}
+.icon-btn:hover{background:var(--panel);color:var(--text);}
+.goal-bar-track{height:8px;background:var(--panel);border-radius:6px;overflow:hidden;margin-top:8px;}
+.goal-bar-fill{height:100%;background:var(--accent);}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--panel-2);border:1px solid var(--border);padding:12px 18px;border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;display:none;}
+.toast.show{display:block;}
+.checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);}
+.chart-wrap{position:relative;height:230px;}
+@media(max-width:760px){.sidebar{width:64px;padding:16px 8px;}.brand span.label,.nav-item span.label{display:none;}.main{padding:20px 14px;}}
+
+/* Aparência / layout customizável */
+.app.nav-top{flex-direction:column;}
+.app.nav-top .sidebar{width:100%;height:auto;position:sticky;top:0;flex-direction:row;align-items:center;padding:12px 24px;border-right:none;border-bottom:1px solid var(--border);z-index:10;}
+.app.nav-top .brand{padding:0 20px 0 0;}
+.app.nav-top #nav{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
+.app.nav-top .sidebar-foot{display:none;}
+.app.compact .main{padding:18px 22px;}
+.app.compact .card{padding:12px 14px;}
+.app.compact .grid{gap:10px;}
+input[type=color]{width:44px;height:36px;padding:2px;border:1px solid var(--border);border-radius:6px;background:var(--panel-2);cursor:pointer;}
+.theme-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.theme-row:last-child{border-bottom:none;}
+.theme-row label{margin:0;color:var(--text);font-weight:500;font-size:13px;}
+.swatch-preview{display:flex;gap:6px;margin-top:14px;}
+.swatch-preview .sw{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand"><span class="dot"></span><span class="label">CPA Tracker</span></div>
+    <div id="nav"></div>
+    <div class="sidebar-foot">Fuso: America/Sao_Paulo (GMT-3)</div>
+  </div>
+  <div class="main" id="main"></div>
+</div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modalContent"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ DADOS INICIAIS ============ */
+const SEED_HOUSES = [{"id": "h1", "name": "Stake", "cpa": 110, "autoProfit": null, "color": "#2dd4a7"}, {"id": "h2", "name": "Betfair", "cpa": 90, "autoProfit": null, "color": "#4f9dde"}, {"id": "h3", "name": "Betano", "cpa": 110, "autoProfit": null, "color": "#e8b34d"}, {"id": "h4", "name": "Novi Bet", "cpa": 90, "autoProfit": null, "color": "#b380e8"}, {"id": "h5", "name": "Bet Nacional", "cpa": 80, "autoProfit": null, "color": "#e2905c"}, {"id": "h6", "name": "Esportiva Bet", "cpa": 50, "autoProfit": null, "color": "#e25c9a"}, {"id": "h7", "name": "Sportingbet", "cpa": 150, "autoProfit": 150, "color": "#5ce25c"}];
+const SEED_RECORDS = [{"id": "1784584487842", "date": "2026-07-20", "house": "Stake", "cpa": 110.0, "debit": 80.0, "credit": 0, "net": 30.0, "obs": "", "createdAt": "1784584487842"}, {"id": "1784583186698", "date": "2026-07-20", "house": "Betfair", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487841"}, {"id": "1784581658918", "date": "2026-07-20", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487840"}, {"id": "1784580615485", "date": "2026-07-20", "house": "Novi Bet", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487839"}, {"id": "1784579472185", "date": "2026-07-20", "house": "Stake", "cpa": 110.0, "debit": 50.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487838"}, {"id": "1784578344881", "date": "2026-07-20", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487837"}, {"id": "1784576756720", "date": "2026-07-20", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487836"}, {"id": "1784575554849", "date": "2026-07-20", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 0, "net": 90.0, "obs": "", "createdAt": "1784584487835"}, {"id": "1784575098278", "date": "2026-07-20", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487834"}, {"id": "1784573722608", "date": "2026-07-20", "house": "Betano", "cpa": 110.0, "debit": 40.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487833"}, {"id": "1784573063469", "date": "2026-07-20", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487832"}, {"id": "1784572337024", "date": "2026-07-20", "house": "Bet Nacional", "cpa": 80.0, "debit": 80.0, "credit": 0, "net": 0.0, "obs": "", "createdAt": "1784584487831"}, {"id": "1784570040909", "date": "2026-07-20", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487830"}, {"id": "1784431312614", "date": "2026-07-18", "house": "Betfair", "cpa": 90.0, "debit": 40.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487829"}, {"id": "1784429729643", "date": "2026-07-18", "house": "Novi Bet", "cpa": 90.0, "debit": 50.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487828"}, {"id": "1784427369462", "date": "2026-07-18", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487827"}, {"id": "1784427350406", "date": "2026-07-18", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 0, "net": 90.0, "obs": "", "createdAt": "1784584487826"}, {"id": "1784422321329", "date": "2026-07-17", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487825"}, {"id": "1784422061545", "date": "2026-07-17", "house": "Betano", "cpa": 110.0, "debit": 40.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487824"}, {"id": "1784419815857", "date": "2026-07-18", "house": "Betfair", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487823"}, {"id": "1784418057985", "date": "2026-07-18", "house": "Novi Bet", "cpa": 90.0, "debit": 40.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487822"}, {"id": "1784416804327", "date": "2026-07-18", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487821"}, {"id": "1784404660584", "date": "2026-07-18", "house": "Novi Bet", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487820"}, {"id": "1784399425830", "date": "2026-07-18", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 60.0, "net": 150.0, "obs": "", "createdAt": "1784584487819"}, {"id": "1784398068162", "date": "2026-07-18", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487818"}, {"id": "1784394314279", "date": "2026-07-18", "house": "Stake", "cpa": 110.0, "debit": 60.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487817"}, {"id": "1784393160714", "date": "2026-07-18", "house": "Novi Bet", "cpa": 90.0, "debit": 59.0, "credit": 0, "net": 31.0, "obs": "", "createdAt": "1784584487816"}, {"id": "1784346555987", "date": "2026-07-17", "house": "Stake", "cpa": 110.0, "debit": 70.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487815"}, {"id": "1784344356727", "date": "2026-07-17", "house": "Betfair", "cpa": 90.0, "debit": 40.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487814"}, {"id": "1784344339398", "date": "2026-07-17", "house": "Bet Nacional", "cpa": 80.0, "debit": 50.0, "credit": 0, "net": 30.0, "obs": "", "createdAt": "1784584487813"}, {"id": "1784342040640", "date": "2026-07-17", "house": "Betano", "cpa": 110.0, "debit": 40.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487812"}, {"id": "1784339505516", "date": "2026-07-17", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487811"}, {"id": "1784339111886", "date": "2026-07-17", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487810"}, {"id": "1784332379611", "date": "2026-07-17", "house": "Stake", "cpa": 110.0, "debit": 70.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487809"}, {"id": "1784327342550", "date": "2026-07-17", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 0, "net": 110.0, "obs": "", "createdAt": "1784584487808"}, {"id": "1784327335959", "date": "2026-07-17", "house": "Bet Nacional", "cpa": 80.0, "debit": 10.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487807"}, {"id": "1784326062795", "date": "2026-07-17", "house": "Novi Bet", "cpa": 90.0, "debit": 20.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487806"}, {"id": "1784324467792", "date": "2026-07-17", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 0, "net": 90.0, "obs": "", "createdAt": "1784584487805"}, {"id": "1784323529541", "date": "2026-07-17", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487804"}, {"id": "1784321636491", "date": "2026-07-17", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487803"}, {"id": "1784320405032", "date": "2026-07-17", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487802"}, {"id": "1784316147315", "date": "2026-07-17", "house": "Stake", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487801"}, {"id": "1784315738842", "date": "2026-07-17", "house": "Novi Bet", "cpa": 90.0, "debit": 0, "credit": 87.0, "net": 177.0, "obs": "", "createdAt": "1784584487800"}, {"id": "1784312180161", "date": "2026-07-17", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487799"}, {"id": "1784310809797", "date": "2026-07-17", "house": "Bet Nacional", "cpa": 80.0, "debit": 10.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487798"}, {"id": "1784258733780", "date": "2026-07-16", "house": "Stake", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487797"}, {"id": "1784256446220", "date": "2026-07-16", "house": "Betfair", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487796"}, {"id": "1784254807698", "date": "2026-07-16", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487795"}, {"id": "1784254763039", "date": "2026-07-16", "house": "Novi Bet", "cpa": 90.0, "debit": 34.0, "credit": 0, "net": 56.0, "obs": "", "createdAt": "1784584487794"}, {"id": "1784252678409", "date": "2026-07-16", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 35.0, "net": 145.0, "obs": "", "createdAt": "1784584487793"}, {"id": "1784250483615", "date": "2026-07-16", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 80.0, "net": 130.0, "obs": "", "createdAt": "1784584487792"}, {"id": "1784249017182", "date": "2026-07-16", "house": "Bet Nacional", "cpa": 80.0, "debit": 0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487791"}, {"id": "1784183759041", "date": "2026-07-16", "house": "Novi Bet", "cpa": 90.0, "debit": 55.0, "credit": 0, "net": 35.0, "obs": "", "createdAt": "1784584487790"}, {"id": "1784183602248", "date": "2026-07-16", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487789"}, {"id": "1784182321036", "date": "2026-07-16", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487788"}, {"id": "1784181940069", "date": "2026-07-16", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 95.0, "net": 205.0, "obs": "", "createdAt": "1784584487787"}, {"id": "1784181077785", "date": "2026-07-16", "house": "Novi Bet", "cpa": 90.0, "debit": 90.0, "credit": 0, "net": 0.0, "obs": "", "createdAt": "1784584487786"}, {"id": "1784179854065", "date": "2026-07-16", "house": "Betfair", "cpa": 90.0, "debit": 20.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487785"}, {"id": "1784179184430", "date": "2026-07-16", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487784"}, {"id": "1784176271798", "date": "2026-07-16", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487783"}, {"id": "1784176258457", "date": "2026-07-16", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487782"}, {"id": "1784170326200", "date": "2026-07-16", "house": "Betano", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487781"}, {"id": "1784168455618", "date": "2026-07-16", "house": "Novi Bet", "cpa": 90.0, "debit": 90.0, "credit": 0, "net": 0.0, "obs": "", "createdAt": "1784584487780"}, {"id": "1784167455538", "date": "2026-07-16", "house": "Stake", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487779"}, {"id": "1784164725386", "date": "2026-07-16", "house": "Betfair", "cpa": 90.0, "debit": 40.0, "credit": 0, "net": 50.0, "obs": "thiago", "createdAt": "1784584487778"}, {"id": "1784163865119", "date": "2026-07-16", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 0, "net": 50.0, "obs": "Thiago", "createdAt": "1784584487777"}, {"id": "1782616424841", "date": "2026-06-27", "house": "Stake", "cpa": 110.0, "debit": 120.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487776"}, {"id": "1782613489184", "date": "2026-06-27", "house": "Betfair", "cpa": 90.0, "debit": 60.0, "credit": 0, "net": 30.0, "obs": "", "createdAt": "1784584487775"}, {"id": "1782613479397", "date": "2026-06-27", "house": "Betano", "cpa": 110.0, "debit": 90.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487774"}, {"id": "1782611677434", "date": "2026-06-27", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487773"}, {"id": "1782610503950", "date": "2026-06-27", "house": "Bet Nacional", "cpa": 80.0, "debit": 20.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487772"}, {"id": "1782609971263", "date": "2026-06-27", "house": "Esportiva Bet", "cpa": 50.0, "debit": 40.0, "credit": 0, "net": 10.0, "obs": "", "createdAt": "1784584487771"}, {"id": "1782604639117", "date": "2026-06-27", "house": "Esportiva Bet", "cpa": 50.0, "debit": 80.0, "credit": 0, "net": -30.0, "obs": "", "createdAt": "1784584487770"}, {"id": "1782604623152", "date": "2026-06-27", "house": "Betano", "cpa": 110.0, "debit": 90.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487769"}, {"id": "1782604610879", "date": "2026-06-27", "house": "Esportiva Bet", "cpa": 50.0, "debit": 80.0, "credit": 0, "net": -30.0, "obs": "", "createdAt": "1784584487768"}, {"id": "1782598668713", "date": "2026-06-27", "house": "Bet Nacional", "cpa": 80.0, "debit": 0, "credit": 105.0, "net": 185.0, "obs": "", "createdAt": "1784584487767"}, {"id": "1782595039102", "date": "2026-06-27", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487766"}, {"id": "1782591868025", "date": "2026-06-27", "house": "Esportiva Bet", "cpa": 50.0, "debit": 80.0, "credit": 0, "net": -30.0, "obs": "", "createdAt": "1784584487765"}, {"id": "1782525337500", "date": "2026-06-26", "house": "Betfair", "cpa": 90.0, "debit": 100.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487764"}, {"id": "1782521471674", "date": "2026-06-26", "house": "Bet Nacional", "cpa": 80.0, "debit": 20.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487763"}, {"id": "1782511714367", "date": "2026-06-26", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487762"}, {"id": "1782506107110", "date": "2026-06-26", "house": "Stake", "cpa": 110.0, "debit": 120.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487761"}, {"id": "1782440277220", "date": "2026-06-25", "house": "Stake", "cpa": 110.0, "debit": 120.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487760"}, {"id": "1782434845942", "date": "2026-06-25", "house": "Bet Nacional", "cpa": 80.0, "debit": 20.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487759"}, {"id": "1782433975811", "date": "2026-06-25", "house": "Betano", "cpa": 110.0, "debit": 0, "credit": 0, "net": 110.0, "obs": "", "createdAt": "1784584487758"}, {"id": "1782430612579", "date": "2026-06-25", "house": "Betfair", "cpa": 90.0, "debit": 80.0, "credit": 0, "net": 10.0, "obs": "", "createdAt": "1784584487757"}, {"id": "1782429680422", "date": "2026-06-25", "house": "Betfair", "cpa": 90.0, "debit": 100.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487756"}, {"id": "1782429130791", "date": "2026-06-25", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 0, "net": 110.0, "obs": "", "createdAt": "1784584487755"}, {"id": "1782428252634", "date": "2026-06-25", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487754"}, {"id": "1782428241847", "date": "2026-06-25", "house": "Betfair", "cpa": 90.0, "debit": 30.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487753"}, {"id": "1782421440870", "date": "2026-06-25", "house": "Bet Nacional", "cpa": 80.0, "debit": 0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487752"}, {"id": "1782417551937", "date": "2026-06-25", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487751"}, {"id": "1782408245820", "date": "2026-06-25", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 125.0, "net": 235.0, "obs": "", "createdAt": "1784584487750"}, {"id": "1782406210221", "date": "2026-06-25", "house": "Betfair", "cpa": 90.0, "debit": 40.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487749"}, {"id": "1782394150149", "date": "2026-06-22", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 72.0, "net": 122.0, "obs": "", "createdAt": "1784584487748"}, {"id": "1782394064195", "date": "2026-06-22", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 120.0, "net": 210.0, "obs": "", "createdAt": "1784584487747"}, {"id": "1782393978385", "date": "2026-06-22", "house": "Betano", "cpa": 110.0, "debit": 70.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487746"}, {"id": "1782393925151", "date": "2026-06-22", "house": "Bet Nacional", "cpa": 80.0, "debit": 51.0, "credit": 0, "net": 29.0, "obs": "", "createdAt": "1784584487745"}, {"id": "1782393907231", "date": "2026-06-22", "house": "Esportiva Bet", "cpa": 50.0, "debit": 31.0, "credit": 0, "net": 19.0, "obs": "", "createdAt": "1784584487744"}, {"id": "1782393644464", "date": "2026-06-22", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 120.0, "net": 230.0, "obs": "", "createdAt": "1784584487743"}, {"id": "1782393621557", "date": "2026-06-21", "house": "Betano", "cpa": 110.0, "debit": 70.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487742"}, {"id": "1782393364612", "date": "2026-06-21", "house": "Betano", "cpa": 110.0, "debit": 0, "credit": 105.0, "net": 215.0, "obs": "", "createdAt": "1784584487741"}, {"id": "1782393269505", "date": "2026-06-21", "house": "Esportiva Bet", "cpa": 50.0, "debit": 20.0, "credit": 0, "net": 30.0, "obs": "", "createdAt": "1784584487740"}, {"id": "1782393225598", "date": "2026-06-22", "house": "Bet Nacional", "cpa": 80.0, "debit": 30.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487739"}, {"id": "1782393203051", "date": "2026-06-21", "house": "Esportiva Bet", "cpa": 50.0, "debit": 60.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487738"}, {"id": "1782393145183", "date": "2026-06-21", "house": "Bet Nacional", "cpa": 80.0, "debit": 52.0, "credit": 0, "net": 28.0, "obs": "", "createdAt": "1784584487737"}, {"id": "1782359161077", "date": "2026-06-24", "house": "Betano", "cpa": 110.0, "debit": 40.0, "credit": 0, "net": 70.0, "obs": "", "createdAt": "1784584487736"}, {"id": "1782357979567", "date": "2026-06-24", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487735"}, {"id": "1782352957203", "date": "2026-06-24", "house": "Bet Nacional", "cpa": 80.0, "debit": 32.0, "credit": 0, "net": 48.0, "obs": "", "createdAt": "1784584487734"}, {"id": "1782346124601", "date": "2026-06-24", "house": "Stake", "cpa": 110.0, "debit": 50.0, "credit": 0, "net": 60.0, "obs": "", "createdAt": "1784584487733"}, {"id": "1782345134561", "date": "2026-06-24", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 0, "net": 110.0, "obs": "", "createdAt": "1784584487732"}, {"id": "1782343951402", "date": "2026-06-24", "house": "Esportiva Bet", "cpa": 50.0, "debit": 25.0, "credit": 0, "net": 25.0, "obs": "", "createdAt": "1784584487731"}, {"id": "1782341149674", "date": "2026-06-24", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487730"}, {"id": "1782339161555", "date": "2026-06-24", "house": "Betano", "cpa": 110.0, "debit": 60.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487729"}, {"id": "1782337799020", "date": "2026-06-24", "house": "Esportiva Bet", "cpa": 50.0, "debit": 80.0, "credit": 0, "net": -30.0, "obs": "", "createdAt": "1784584487728"}, {"id": "1782337091385", "date": "2026-06-23", "house": "Stake", "cpa": 110.0, "debit": 60.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487727"}, {"id": "1782337071205", "date": "2026-06-23", "house": "Betano", "cpa": 110.0, "debit": 60.0, "credit": 0, "net": 50.0, "obs": "", "createdAt": "1784584487726"}, {"id": "1782337048507", "date": "2026-06-23", "house": "Betfair", "cpa": 90.0, "debit": 50.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487725"}, {"id": "1782337030291", "date": "2026-06-23", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487724"}, {"id": "1782336994434", "date": "2026-06-23", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487723"}, {"id": "1782336980788", "date": "2026-06-23", "house": "Bet Nacional", "cpa": 80.0, "debit": 80.0, "credit": 0, "net": 0.0, "obs": "", "createdAt": "1784584487722"}, {"id": "1782336906101", "date": "2026-06-23", "house": "Betfair", "cpa": 90.0, "debit": 100.0, "credit": 0, "net": -10.0, "obs": "", "createdAt": "1784584487721"}, {"id": "1782336812826", "date": "2026-06-23", "house": "Betano", "cpa": 110.0, "debit": 0, "credit": 16.0, "net": 126.0, "obs": "", "createdAt": "1784584487720"}, {"id": "1782336781200", "date": "2026-06-23", "house": "Stake", "cpa": 110.0, "debit": 30.0, "credit": 0, "net": 80.0, "obs": "", "createdAt": "1784584487719"}, {"id": "1782336731775", "date": "2026-06-23", "house": "Bet Nacional", "cpa": 80.0, "debit": 40.0, "credit": 0, "net": 40.0, "obs": "", "createdAt": "1784584487718"}, {"id": "1782336704430", "date": "2026-06-23", "house": "Betano", "cpa": 110.0, "debit": 92.0, "credit": 0, "net": 18.0, "obs": "", "createdAt": "1784584487717"}, {"id": "1782336653553", "date": "2026-06-22", "house": "Betano", "cpa": 110.0, "debit": 0, "credit": 195.0, "net": 305.0, "obs": "", "createdAt": "1784584487716"}, {"id": "1782336630995", "date": "2026-06-23", "house": "Bet Nacional", "cpa": 80.0, "debit": 50.0, "credit": 0, "net": 30.0, "obs": "", "createdAt": "1784584487715"}, {"id": "1782336603822", "date": "2026-06-22", "house": "Betfair", "cpa": 90.0, "debit": 61.0, "credit": 0, "net": 29.0, "obs": "", "createdAt": "1784584487714"}, {"id": "1782336565578", "date": "2026-06-22", "house": "Betano", "cpa": 110.0, "debit": 90.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487713"}, {"id": "1782336496545", "date": "2026-06-22", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 72.0, "net": 122.0, "obs": "", "createdAt": "1784584487712"}, {"id": "1782336251585", "date": "2026-06-22", "house": "Betfair", "cpa": 90.0, "debit": 0, "credit": 25.0, "net": 115.0, "obs": "", "createdAt": "1784584487711"}, {"id": "1782336216738", "date": "2026-06-22", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 120.0, "net": 230.0, "obs": "", "createdAt": "1784584487710"}, {"id": "1782336156795", "date": "2026-06-22", "house": "Esportiva Bet", "cpa": 50.0, "debit": 30.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487709"}, {"id": "1782336128422", "date": "2026-06-22", "house": "Betfair", "cpa": 90.0, "debit": 70.0, "credit": 0, "net": 20.0, "obs": "", "createdAt": "1784584487708"}, {"id": "1782336082660", "date": "2026-06-22", "house": "Stake", "cpa": 110.0, "debit": 0, "credit": 50.0, "net": 160.0, "obs": "", "createdAt": "1784584487707"}, {"id": "1782336060664", "date": "2026-06-23", "house": "Betano", "cpa": 110.0, "debit": 0, "credit": 0, "net": 110.0, "obs": "", "createdAt": "1784584487706"}, {"id": "1782336007160", "date": "2026-06-22", "house": "Bet Nacional", "cpa": 80.0, "debit": 51.0, "credit": 0, "net": 29.0, "obs": "", "createdAt": "1784584487705"}, {"id": "1782335974851", "date": "2026-06-22", "house": "Bet Nacional", "cpa": 80.0, "debit": 31.0, "credit": 0, "net": 49.0, "obs": "", "createdAt": "1784584487704"}, {"id": "1782335925482", "date": "2026-06-22", "house": "Esportiva Bet", "cpa": 50.0, "debit": 0, "credit": 11.0, "net": 61.0, "obs": "", "createdAt": "1784584487703"}];
+
+/* ============ HELPERS DE FUSO HORÁRIO (America/Sao_Paulo, GMT-3 fixo, sem horário de verão) ============ */
+function brNow(){
+  const now = new Date();
+  const utcMs = now.getTime() + now.getTimezoneOffset()*60000;
+  return new Date(utcMs - 3*60*60*1000);
+}
+function toISODate(d){
+  const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function brToday(){ return toISODate(brNow()); }
+function addDaysISO(iso, days){
+  const [y,m,d]=iso.split('-').map(Number);
+  const dt=new Date(Date.UTC(y,m-1,d));
+  dt.setUTCDate(dt.getUTCDate()+days);
+  return dt.toISOString().split('T')[0];
+}
+function fmtDateBR(iso){
+  const [y,m,d]=iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function fmtMoney(v){
+  const n = Number(v)||0;
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+/* ============ STORAGE ============ */
+const STORAGE_OK = !!(window.storage && window.storage.get);
+async function stGet(key, fallback){
+  if(!STORAGE_OK) return fallback;
+  try{
+    const r = await window.storage.get(key, false);
+    return r ? JSON.parse(r.value) : fallback;
+  }catch(e){ return fallback; }
+}
+async function stSet(key, value){
+  if(!STORAGE_OK) return;
+  try{ await window.storage.set(key, JSON.stringify(value), false); }catch(e){ console.error('storage set failed', key, e); }
+}
+
+/* ============ ESTADO ============ */
+const DEFAULT_THEME = {
+  bg:'#10131a', panel:'#171c26', panel2:'#1d2330', border:'#262e3d',
+  text:'#e7ebf3', textDim:'#8b94a7', accent:'#2dd4a7', danger:'#e25c5c',
+  gold:'#e8b34d', purple:'#b380e8', navPosition:'lateral', density:'normal',
+  displayFont:'grotesk'
+};
+const FONT_MAP = { grotesk:"'Space Grotesk', sans-serif", poppins:"'Poppins', sans-serif", sora:"'Sora', sans-serif" };
+
+let state = {
+  houses: [],
+  records: [],
+  goals: [],
+  notes: [],
+  theme: { ...DEFAULT_THEME },
+  tab: 'dashboard',
+  dashRange: '30d',
+  dashFrom: null,
+  dashTo: null,
+  histFilters: { casa:'', tipo:'', de:'', ate:'', busca:'', fluxo:'' },
+  charts: {}
+};
+
+async function loadState(){
+  const seeded = await stGet('cpa_seeded', false);
+  if(!seeded){
+    state.houses = SEED_HOUSES;
+    state.records = SEED_RECORDS;
+    state.goals = [];
+    state.notes = [];
+    await persistAll();
+    await stSet('cpa_seeded', true);
+  } else {
+    state.houses = await stGet('cpa_houses', SEED_HOUSES);
+    state.records = await stGet('cpa_records', []);
+    state.goals = await stGet('cpa_goals', []);
+    state.notes = await stGet('cpa_notes', []);
+  }
+  state.theme = { ...DEFAULT_THEME, ...(await stGet('cpa_theme', {})) };
+  applyTheme();
+}
+function applyTheme(){
+  const t = state.theme;
+  const root = document.documentElement.style;
+  root.setProperty('--bg', t.bg);
+  root.setProperty('--panel', t.panel);
+  root.setProperty('--panel-2', t.panel2);
+  root.setProperty('--border', t.border);
+  root.setProperty('--text', t.text);
+  root.setProperty('--text-dim', t.textDim);
+  root.setProperty('--accent', t.accent);
+  root.setProperty('--accent-dim', t.accent);
+  root.setProperty('--danger', t.danger);
+  root.setProperty('--gold', t.gold);
+  root.setProperty('--purple', t.purple);
+  root.setProperty('--font-display', FONT_MAP[t.displayFont] || FONT_MAP.grotesk);
+  const appEl = document.querySelector('.app');
+  if(appEl){
+    appEl.className = 'app' + (t.navPosition==='topo' ? ' nav-top' : '') + (t.density==='compact' ? ' compact' : '');
+  }
+}
+async function saveTheme(){ await stSet('cpa_theme', state.theme); }
+async function persistAll(){
+  await stSet('cpa_houses', state.houses);
+  await stSet('cpa_records', state.records);
+  await stSet('cpa_goals', state.goals);
+  await stSet('cpa_notes', state.notes);
+}
+async function saveHouses(){ await stSet('cpa_houses', state.houses); }
+async function saveRecords(){ await stSet('cpa_records', state.records); }
+async function saveGoals(){ await stSet('cpa_goals', state.goals); }
+async function saveNotes(){ await stSet('cpa_notes', state.notes); }
+
+function houseByName(name){ return state.houses.find(h=>h.name===name); }
+function houseColor(name){ const h=houseByName(name); return h?h.color:'#8b94a7'; }
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ============ NAV ============ */
+const NAV_ITEMS = [
+  {id:'dashboard', label:'Dashboard', ico:'▦'},
+  {id:'novo', label:'Novo Registro', ico:'✚'},
+  {id:'historico', label:'Histórico', ico:'≡'},
+  {id:'casas', label:'Casas', ico:'◆'},
+  {id:'metas', label:'Metas', ico:'◎'},
+  {id:'notas', label:'Anotações', ico:'✎'},
+  {id:'aparencia', label:'Aparência', ico:'◐'},
+  {id:'dados', label:'Dados', ico:'⇅'},
+];
+function renderNav(){
+  const nav = document.getElementById('nav');
+  nav.innerHTML = NAV_ITEMS.map(it=>`
+    <div class="nav-item ${state.tab===it.id?'active':''}" data-tab="${it.id}">
+      <span class="ico">${it.ico}</span><span class="label">${it.label}</span>
+    </div>`).join('');
+  nav.querySelectorAll('.nav-item').forEach(el=>{
+    el.addEventListener('click', ()=>{ state.tab = el.dataset.tab; render(); });
+  });
+}
+
+/* ============ FILTRO DE PERÍODO (usado no dashboard) ============ */
+function rangeFromPreset(preset){
+  const today = brToday();
+  if(preset==='hoje') return {from:today, to:today};
+  if(preset==='7d') return {from:addDaysISO(today,-6), to:today};
+  if(preset==='30d') return {from:addDaysISO(today,-29), to:today};
+  if(preset==='mes'){
+    const d = brNow();
+    const from = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`;
+    return {from, to:today};
+  }
+  if(preset==='tudo') return {from:'0000-01-01', to:'9999-12-31'};
+  return {from:'0000-01-01', to:'9999-12-31'};
+}
+function filteredRecords(from, to, extra){
+  extra = extra || {};
+  return state.records.filter(r=>{
+    if(r.date < from || r.date > to) return false;
+    if(extra.casa && r.house !== extra.casa) return false;
+    if(extra.tipo==='lucro' && !(r.net>0)) return false;
+    if(extra.tipo==='prejuizo' && !(r.net<0)) return false;
+    if(extra.tipo==='zero' && r.net!==0) return false;
+    if(extra.fluxo==='entradas' && r.net<0) return false;
+    if(extra.fluxo==='saidas' && r.net>=0) return false;
+    if(extra.busca){
+      const q = extra.busca.toLowerCase();
+      if(!(r.house.toLowerCase().includes(q) || (r.obs||'').toLowerCase().includes(q))) return false;
+    }
+    return true;
+  });
+}
+
+/* ============ RENDER DISPATCH ============ */
+function render(){
+  renderNav();
+  const main = document.getElementById('main');
+  if(state.tab==='dashboard') main.innerHTML = renderDashboard();
+  else if(state.tab==='novo') main.innerHTML = renderNovo();
+  else if(state.tab==='historico') main.innerHTML = renderHistorico();
+  else if(state.tab==='casas') main.innerHTML = renderCasas();
+  else if(state.tab==='metas') main.innerHTML = renderMetas();
+  else if(state.tab==='notas') main.innerHTML = renderNotas();
+  else if(state.tab==='aparencia') main.innerHTML = renderAparencia();
+  else if(state.tab==='dados') main.innerHTML = renderDados();
+  attachHandlers();
+  applyTheme();
+  if(state.tab==='dashboard') drawCharts();
+}
+
+/* ============ DASHBOARD ============ */
+function renderDashboard(){
+  let from, to;
+  if(state.dashFrom && state.dashTo){ from=state.dashFrom; to=state.dashTo; }
+  else { const r = rangeFromPreset(state.dashRange); from=r.from; to=r.to; }
+
+  const recs = filteredRecords(from, to);
+  const totalEntradas = recs.filter(r=>r.net>0).reduce((s,r)=>s+r.net,0);
+  const totalSaidas = recs.filter(r=>r.net<0).reduce((s,r)=>s+Math.abs(r.net),0);
+  const liquido = recs.reduce((s,r)=>s+r.net,0);
+  const totalCpa = recs.reduce((s,r)=>s+r.cpa,0);
+
+  const last = [...state.records].sort((a,b)=> (b.date+b.createdAt).localeCompare(a.date+a.createdAt)).slice(0,8);
+
+  return `
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-sub">Visão geral das suas contas de CPA — horário de Brasília (GMT-3)</p>
+
+    <div class="pill-row">
+      <div class="pill ${state.dashRange==='hoje'&&!state.dashFrom?'active':''}" data-preset="hoje">Hoje</div>
+      <div class="pill ${state.dashRange==='7d'&&!state.dashFrom?'active':''}" data-preset="7d">Últimos 7 dias</div>
+      <div class="pill ${state.dashRange==='30d'&&!state.dashFrom?'active':''}" data-preset="30d">Últimos 30 dias</div>
+      <div class="pill ${state.dashRange==='mes'&&!state.dashFrom?'active':''}" data-preset="mes">Este mês</div>
+      <div class="pill ${state.dashRange==='tudo'&&!state.dashFrom?'active':''}" data-preset="tudo">Tudo</div>
+      <div class="date-range">
+        <span>De</span><input type="date" id="dashFrom" value="${state.dashFrom||''}" style="width:150px">
+        <span>Até</span><input type="date" id="dashTo" value="${state.dashTo||''}" style="width:150px">
+        ${state.dashFrom?'<button class="btn secondary small" id="clearRange">Limpar</button>':''}
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-bottom:18px;">
+      <div class="card"><div class="kpi-label">Entradas</div><div class="kpi-value pos mono">R$ ${fmtMoney(totalEntradas)}</div><div class="kpi-sub">${recs.filter(r=>r.net>0).length} registros positivos</div></div>
+      <div class="card"><div class="kpi-label">Saídas</div><div class="kpi-value neg mono">R$ ${fmtMoney(totalSaidas)}</div><div class="kpi-sub">${recs.filter(r=>r.net<0).length} registros negativos</div></div>
+      <div class="card"><div class="kpi-label">Líquido no período</div><div class="kpi-value ${liquido>=0?'pos':'neg'} mono">R$ ${fmtMoney(liquido)}</div><div class="kpi-sub">${fmtDateBR(from==='0000-01-01'?(recs[0]?recs[0].date:brToday()):from)} — ${fmtDateBR(to==='9999-12-31'?brToday():to)}</div></div>
+      <div class="card"><div class="kpi-label">CPA Total</div><div class="kpi-value mono">R$ ${fmtMoney(totalCpa)}</div><div class="kpi-sub">${recs.length} contas no período</div></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-bottom:16px;">
+      <div class="card"><div class="section-title">Receita por Casa</div><div class="chart-wrap"><canvas id="chartCasa"></canvas></div></div>
+      <div class="card"><div class="section-title">Distribuição por Casa</div><div class="chart-wrap"><canvas id="chartDist"></canvas></div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="section-title">Evolução Diária</div><div class="chart-wrap"><canvas id="chartLine"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Últimos Registros</div>
+      <table>
+        <thead><tr><th>Data</th><th>Casa</th><th>CPA</th><th>Ajustes</th><th>Líquido</th></tr></thead>
+        <tbody>
+        ${last.length? last.map(r=>`
+          <tr>
+            <td>${fmtDateBR(r.date)}</td>
+            <td><span class="house-chip"><span class="sw" style="background:${houseColor(r.house)}"></span>${r.house}</span></td>
+            <td class="mono">R$ ${fmtMoney(r.cpa)}</td>
+            <td class="mono">${r.debit? `<span class="neg">-${fmtMoney(r.debit)}</span>`:''}${r.credit? `<span class="pos">+${fmtMoney(r.credit)}</span>`:''}${(!r.debit&&!r.credit)?'—':''}</td>
+            <td class="mono ${r.net>=0?'pos':'neg'}">R$ ${fmtMoney(r.net)}</td>
+          </tr>`).join('') : '<tr><td colspan="5" class="empty">Nenhum registro ainda</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function drawCharts(){
+  Object.values(state.charts).forEach(c=>c && c.destroy());
+  state.charts = {};
+
+  let from, to;
+  if(state.dashFrom && state.dashTo){ from=state.dashFrom; to=state.dashTo; }
+  else { const r = rangeFromPreset(state.dashRange); from=r.from; to=r.to; }
+  const recs = filteredRecords(from, to);
+
+  const byHouse = {};
+  state.houses.forEach(h=>byHouse[h.name]=0);
+  recs.forEach(r=>{ byHouse[r.house]=(byHouse[r.house]||0)+r.net; });
+  const houseNames = Object.keys(byHouse).filter(n=>byHouse[n]!==0 || state.houses.some(h=>h.name===n));
+  const colors = houseNames.map(n=>houseColor(n));
+
+  const ctxCasa = document.getElementById('chartCasa');
+  if(ctxCasa){
+    state.charts.casa = new Chart(ctxCasa, {
+      type:'bar',
+      data:{ labels:houseNames, datasets:[{ data:houseNames.map(n=>byHouse[n]), backgroundColor:colors, borderRadius:6 }] },
+      options:{ indexAxis:'y', plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'#262e3d'}, ticks:{color:'#8b94a7'}}, y:{grid:{display:false}, ticks:{color:'#e7ebf3'}} } }
+    });
+  }
+  const ctxDist = document.getElementById('chartDist');
+  if(ctxDist){
+    const counts = houseNames.map(n=>recs.filter(r=>r.house===n).length);
+    state.charts.dist = new Chart(ctxDist, {
+      type:'doughnut',
+      data:{ labels:houseNames, datasets:[{ data:counts, backgroundColor:colors, borderWidth:0 }] },
+      options:{ plugins:{legend:{position:'bottom', labels:{color:'#8b94a7', font:{size:11}, boxWidth:8}}} }
+    });
+  }
+  const ctxLine = document.getElementById('chartLine');
+  if(ctxLine){
+    const days = {};
+    recs.forEach(r=>{ days[r.date]=(days[r.date]||0)+r.net; });
+    const sortedDays = Object.keys(days).sort();
+    state.charts.line = new Chart(ctxLine, {
+      type:'line',
+      data:{ labels:sortedDays.map(fmtDateBR), datasets:[{ data:sortedDays.map(d=>days[d]), borderColor:'#2dd4a7', backgroundColor:'rgba(45,212,167,0.12)', fill:true, tension:.3, pointRadius:2 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}, ticks:{color:'#8b94a7', maxRotation:0}}, y:{grid:{color:'#262e3d'}, ticks:{color:'#8b94a7'}} } }
+    });
+  }
+}
+
+/* ============ NOVO REGISTRO ============ */
+function renderNovo(){
+  const opts = state.houses.map(h=>`<option value="${h.name}">${h.name}</option>`).join('');
+  return `
+    <h1 class="page-title">Novo Registro</h1>
+    <p class="page-sub">Registre o CPA e ajustes de uma conta</p>
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="field"><label>Casa de Apostas</label><select id="fHouse">${opts}</select></div>
+        <div class="field"><label>Data do Registro</label><input type="date" id="fDate" value="${brToday()}"></div>
+        <div class="row">
+          <div class="field"><label>Débito (cashback, conta)</label><input type="number" id="fDebit" step="0.01" placeholder="0.00"></div>
+          <div class="field"><label>Crédito (lucro, bônus)</label><input type="number" id="fCredit" step="0.01" placeholder="0.00"></div>
+        </div>
+        <div class="field" id="autoNotice" style="display:none;"></div>
+        <div class="field"><label>Observação (opcional)</label><textarea id="fObs" rows="2" placeholder="Ex: nome do responsável..."></textarea></div>
+        <button class="btn" id="saveRegistro">Salvar Registro</button>
+      </div>
+      <div class="card">
+        <div class="section-title">Resumo</div>
+        <div id="resumoBox"></div>
+      </div>
+    </div>
+  `;
+}
+function updateResumo(){
+  const hName = document.getElementById('fHouse').value;
+  const h = houseByName(hName);
+  const debitEl = document.getElementById('fDebit');
+  const creditEl = document.getElementById('fCredit');
+  const notice = document.getElementById('autoNotice');
+  let debit = parseFloat(debitEl.value)||0;
+  let credit = parseFloat(creditEl.value)||0;
+  let net;
+  if(h && h.autoProfit!=null){
+    debitEl.value=''; creditEl.value=''; debitEl.disabled=true; creditEl.disabled=true;
+    notice.style.display='block';
+    notice.innerHTML = `<span class="tag-auto">LUCRO AUTOMÁTICO</span> Esta casa aplica lucro fixo de <b>R$ ${fmtMoney(h.autoProfit)}</b> automaticamente.`;
+    net = h.autoProfit;
+  } else {
+    debitEl.disabled=false; creditEl.disabled=false; notice.style.display='none';
+    net = (h?h.cpa:0) - debit + credit;
+  }
+  document.getElementById('resumoBox').innerHTML = h ? `
+    <table>
+      <tr><td>Casa</td><td class="mono">${h.name}</td></tr>
+      <tr><td>CPA base</td><td class="mono">R$ ${fmtMoney(h.cpa)}</td></tr>
+      <tr><td>Ajustes</td><td class="mono">${h.autoProfit!=null?'—':`-${fmtMoney(debit)} / +${fmtMoney(credit)}`}</td></tr>
+      <tr><td><b>Líquido</b></td><td class="mono ${net>=0?'pos':'neg'}"><b>R$ ${fmtMoney(net)}</b></td></tr>
+    </table>` : '<div class="empty">Selecione uma casa para ver o resumo</div>';
+}
+
+/* ============ HISTÓRICO ============ */
+function renderHistorico(){
+  const f = state.histFilters;
+  const recs = filteredRecords(f.de||'0000-01-01', f.ate||'9999-12-31', f)
+    .sort((a,b)=> (b.date+b.createdAt).localeCompare(a.date+a.createdAt));
+  const houseOpts = `<option value="">Todas</option>` + state.houses.map(h=>`<option value="${h.name}" ${f.casa===h.name?'selected':''}>${h.name}</option>`).join('');
+  return `
+    <h1 class="page-title">Histórico</h1>
+    <p class="page-sub">${recs.length} registros</p>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="grid grid-4" style="margin-bottom:10px;">
+        <div class="field" style="margin:0;"><label>Buscar</label><input type="text" id="hBusca" value="${f.busca}" placeholder="casa ou observação"></div>
+        <div class="field" style="margin:0;"><label>Casa</label><select id="hCasa">${houseOpts}</select></div>
+        <div class="field" style="margin:0;"><label>Tipo</label>
+          <select id="hTipo">
+            <option value="">Todos</option>
+            <option value="lucro" ${f.tipo==='lucro'?'selected':''}>Lucro</option>
+            <option value="prejuizo" ${f.tipo==='prejuizo'?'selected':''}>Prejuízo</option>
+            <option value="zero" ${f.tipo==='zero'?'selected':''}>Zero</option>
+          </select>
+        </div>
+        <div class="field" style="margin:0;"><label>Fluxo</label>
+          <select id="hFluxo">
+            <option value="">Todos</option>
+            <option value="entradas" ${f.fluxo==='entradas'?'selected':''}>Entradas</option>
+            <option value="saidas" ${f.fluxo==='saidas'?'selected':''}>Saídas</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="align-items:flex-end;">
+        <div class="field" style="margin:0;"><label>De</label><input type="date" id="hDe" value="${f.de}"></div>
+        <div class="field" style="margin:0;"><label>Até</label><input type="date" id="hAte" value="${f.ate}"></div>
+        <button class="btn secondary" id="hClear">Limpar</button>
+        <button class="btn" id="hExport">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Data</th><th>Casa</th><th>CPA</th><th>Ajustes</th><th>Líquido</th><th>Obs</th><th>Ações</th></tr></thead>
+        <tbody>
+        ${recs.length? recs.map(r=>`
+          <tr data-id="${r.id}">
+            <td>${fmtDateBR(r.date)}</td>
+            <td><span class="house-chip"><span class="sw" style="background:${houseColor(r.house)}"></span>${r.house}</span></td>
+            <td class="mono">R$ ${fmtMoney(r.cpa)}</td>
+            <td class="mono">${r.debit?`<span class="neg">-${fmtMoney(r.debit)}</span> `:''}${r.credit?`<span class="pos">+${fmtMoney(r.credit)}</span>`:''}${(!r.debit&&!r.credit)?'—':''}</td>
+            <td class="mono ${r.net>=0?'pos':'neg'}">R$ ${fmtMoney(r.net)}</td>
+            <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-dim);">${r.obs||''}</td>
+            <td><button class="icon-btn edit-rec" data-id="${r.id}">Editar</button><button class="icon-btn del-rec" data-id="${r.id}">Excluir</button></td>
+          </tr>`).join('') : '<tr><td colspan="7" class="empty">Nenhum registro encontrado</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function openEditModal(id){
+  const r = state.records.find(x=>x.id===id);
+  if(!r) return;
+  const opts = state.houses.map(h=>`<option value="${h.name}" ${h.name===r.house?'selected':''}>${h.name}</option>`).join('');
+  document.getElementById('modalContent').innerHTML = `
+    <h3>Editar Registro</h3>
+    <div class="field"><label>Casa</label><select id="eHouse">${opts}</select></div>
+    <div class="field"><label>Data</label><input type="date" id="eDate" value="${r.date}"></div>
+    <div class="row">
+      <div class="field"><label>Débito</label><input type="number" id="eDebit" step="0.01" value="${r.debit||''}"></div>
+      <div class="field"><label>Crédito</label><input type="number" id="eCredit" step="0.01" value="${r.credit||''}"></div>
+    </div>
+    <div class="field"><label>Observação</label><textarea id="eObs" rows="2">${r.obs||''}</textarea></div>
+    <div class="row">
+      <button class="btn secondary" id="cancelEdit">Cancelar</button>
+      <button class="btn" id="confirmEdit">Salvar</button>
+    </div>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+  document.getElementById('cancelEdit').onclick = closeModal;
+  document.getElementById('confirmEdit').onclick = async ()=>{
+    const hName = document.getElementById('eHouse').value;
+    const h = houseByName(hName);
+    const debit = parseFloat(document.getElementById('eDebit').value)||0;
+    const credit = parseFloat(document.getElementById('eCredit').value)||0;
+    r.house = hName;
+    r.cpa = h.cpa;
+    r.date = document.getElementById('eDate').value;
+    r.obs = document.getElementById('eObs').value;
+    if(h.autoProfit!=null){ r.debit=0; r.credit=0; r.net=h.autoProfit; }
+    else { r.debit=debit; r.credit=credit; r.net = h.cpa - debit + credit; }
+    await saveRecords();
+    closeModal();
+    render();
+    showToast('Registro atualizado');
+  };
+}
+function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
+
+function exportCSV(recs){
+  const header = '"ID","Data","Casa","CPA","Ajustes","Líquido","Obs"';
+  const lines = recs.map(r=>{
+    const ajuste = r.debit? `-${r.debit} `: (r.credit? `+${r.credit} `: '');
+    return `"${r.id}","${r.date}","${r.house}","${r.cpa}","${ajuste}","${r.net.toFixed(2)}","${r.obs||''}"`;
+  });
+  const csv = [header, ...lines].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `cpa_tracker_${brToday()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ============ CASAS ============ */
+function renderCasas(){
+  return `
+    <h1 class="page-title">Casas de Apostas</h1>
+    <p class="page-sub">Gerencie casas, CPA padrão e lucro automático</p>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="section-title">Adicionar nova casa</div>
+      <div class="grid grid-4" style="align-items:end;">
+        <div class="field" style="margin:0;"><label>Nome</label><input type="text" id="nHouseName" placeholder="Ex: Sportingbet"></div>
+        <div class="field" style="margin:0;"><label>CPA padrão (R$)</label><input type="number" id="nHouseCpa" step="0.01" placeholder="Ex: 110"></div>
+        <div class="field" style="margin:0;"><label>Lucro automático (opcional)</label><input type="number" id="nHouseAuto" step="0.01" placeholder="Deixe vazio se não houver"></div>
+        <div class="field" style="margin:0;"><label>Cor</label><input type="text" id="nHouseColor" value="#4f9dde"></div>
+      </div>
+      <button class="btn" id="addHouse" style="margin-top:12px;">Adicionar Casa</button>
+    </div>
+    <div class="grid grid-4">
+      ${state.houses.map(h=>{
+        const recs = state.records.filter(r=>r.house===h.name);
+        const total = recs.reduce((s,r)=>s+r.net,0);
+        return `
+        <div class="house-card">
+          <div class="top">
+            <span class="house-chip"><span class="sw" style="background:${h.color}"></span><b>${h.name}</b></span>
+            ${h.autoProfit!=null?'<span class="tag-auto">AUTO</span>':''}
+          </div>
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">CPA padrão: <span class="mono" style="color:var(--text)">R$ ${fmtMoney(h.cpa)}</span></div>
+          ${h.autoProfit!=null?`<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">Lucro fixo: <span class="mono pos">R$ ${fmtMoney(h.autoProfit)}</span></div>`:''}
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Total líquido: <span class="mono ${total>=0?'pos':'neg'}">R$ ${fmtMoney(total)}</span> · ${recs.length} registros</div>
+          <div class="row">
+            <button class="btn secondary small edit-house" data-name="${h.name}">Editar</button>
+            <button class="btn danger small del-house" data-name="${h.name}">Excluir</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+function openHouseEdit(name){
+  const h = state.houses.find(x=>x.name===name);
+  if(!h) return;
+  document.getElementById('modalContent').innerHTML = `
+    <h3>Editar Casa</h3>
+    <div class="field"><label>Nome</label><input type="text" id="ehName" value="${h.name}"></div>
+    <div class="field"><label>CPA padrão (R$)</label><input type="number" id="ehCpa" step="0.01" value="${h.cpa}"></div>
+    <div class="field"><label>Lucro automático (vazio = desativado)</label><input type="number" id="ehAuto" step="0.01" value="${h.autoProfit!=null?h.autoProfit:''}"></div>
+    <div class="field"><label>Cor</label><input type="text" id="ehColor" value="${h.color}"></div>
+    <div class="row">
+      <button class="btn secondary" id="cancelHouse">Cancelar</button>
+      <button class="btn" id="confirmHouse">Salvar</button>
+    </div>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+  document.getElementById('cancelHouse').onclick = closeModal;
+  document.getElementById('confirmHouse').onclick = async ()=>{
+    const newName = document.getElementById('ehName').value.trim();
+    const oldName = h.name;
+    h.name = newName || oldName;
+    h.cpa = parseFloat(document.getElementById('ehCpa').value)||0;
+    const autoVal = document.getElementById('ehAuto').value;
+    h.autoProfit = autoVal===''? null : parseFloat(autoVal);
+    h.color = document.getElementById('ehColor').value || h.color;
+    if(oldName !== h.name){
+      state.records.forEach(r=>{ if(r.house===oldName) r.house = h.name; });
+      await saveRecords();
+    }
+    await saveHouses();
+    closeModal(); render();
+    showToast('Casa atualizada');
+  };
+}
+
+/* ============ METAS ============ */
+function renderMetas(){
+  const monthStart = `${brNow().getFullYear()}-${String(brNow().getMonth()+1).padStart(2,'0')}-01`;
+  const monthRecs = filteredRecords(monthStart, brToday());
+  const houseOpts = `<option value="">Todas as casas</option>` + state.houses.map(h=>`<option value="${h.name}">${h.name}</option>`).join('');
+  return `
+    <h1 class="page-title">Metas</h1>
+    <p class="page-sub">Acompanhe seus objetivos mensais</p>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="section-title">Nova Meta</div>
+      <div class="grid grid-4" style="align-items:end;">
+        <div class="field" style="margin:0;"><label>Nome</label><input type="text" id="gName" placeholder="Ex: Meta de julho"></div>
+        <div class="field" style="margin:0;"><label>Valor Alvo (R$)</label><input type="number" id="gTarget" step="0.01" placeholder="Ex: 2000"></div>
+        <div class="field" style="margin:0;"><label>Casa (opcional)</label><select id="gHouse">${houseOpts}</select></div>
+        <div class="field" style="margin:0;"><label>Métrica</label>
+          <select id="gMetric">
+            <option value="liquido">Receita Líquida (R$)</option>
+            <option value="contas">Número de Contas</option>
+            <option value="cpa">CPA Total (R$)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn" id="addGoal" style="margin-top:12px;">Adicionar Meta</button>
+    </div>
+    <div class="section-title">Metas do Mês</div>
+    <div class="grid grid-3">
+      ${state.goals.length? state.goals.map(g=>{
+        let recs = g.house? monthRecs.filter(r=>r.house===g.house) : monthRecs;
+        let current;
+        if(g.metric==='contas') current = recs.length;
+        else if(g.metric==='cpa') current = recs.reduce((s,r)=>s+r.cpa,0);
+        else current = recs.reduce((s,r)=>s+r.net,0);
+        const pct = Math.max(0, Math.min(100, (current/g.target)*100 || 0));
+        const label = g.metric==='contas'? current : `R$ ${fmtMoney(current)}`;
+        const targetLabel = g.metric==='contas'? g.target : `R$ ${fmtMoney(g.target)}`;
+        return `
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;">
+            <b>${g.name}</b>
+            <button class="icon-btn del-goal" data-id="${g.id}">✕</button>
+          </div>
+          <div style="font-size:12px;color:var(--text-dim);margin:4px 0;">${g.house||'Todas as casas'}</div>
+          <div class="mono" style="font-size:15px;">${label} <span style="color:var(--text-dim);font-size:12px;">/ ${targetLabel}</span></div>
+          <div class="goal-bar-track"><div class="goal-bar-fill" style="width:${pct}%;"></div></div>
+        </div>`;
+      }).join('') : '<div class="empty">Nenhuma meta cadastrada</div>'}
+    </div>
+  `;
+}
+
+/* ============ NOTAS ============ */
+function renderNotas(){
+  return `
+    <h1 class="page-title">Anotações</h1>
+    <p class="page-sub">Bloco de notas livre para lembretes, estratégias e observações</p>
+    <div class="card" style="margin-bottom:18px;">
+      <div class="field"><label>Título</label><input type="text" id="noteTitle" placeholder="Ex: Ideias de casas novas"></div>
+      <div class="field"><label>Conteúdo</label><textarea id="noteBody" rows="3" placeholder="Escreva sua anotação..."></textarea></div>
+      <button class="btn" id="addNote">Adicionar Nota</button>
+    </div>
+    <div class="notes-grid">
+      ${state.notes.length? [...state.notes].sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).map(n=>`
+        <div class="note-card">
+          <div class="title">${n.title||'(sem título)'}</div>
+          <div class="body">${n.content||''}</div>
+          <div class="foot">
+            <span>${n.updatedAt}</span>
+            <span><button class="icon-btn edit-note" data-id="${n.id}">Editar</button><button class="icon-btn del-note" data-id="${n.id}">Excluir</button></span>
+          </div>
+        </div>
+      `).join('') : '<div class="empty">Nenhuma anotação ainda</div>'}
+    </div>
+  `;
+}
+function openNoteEdit(id){
+  const n = state.notes.find(x=>x.id===id);
+  if(!n) return;
+  document.getElementById('modalContent').innerHTML = `
+    <h3>Editar Nota</h3>
+    <div class="field"><label>Título</label><input type="text" id="enTitle" value="${n.title||''}"></div>
+    <div class="field"><label>Conteúdo</label><textarea id="enBody" rows="4">${n.content||''}</textarea></div>
+    <div class="row">
+      <button class="btn secondary" id="cancelNote">Cancelar</button>
+      <button class="btn" id="confirmNote">Salvar</button>
+    </div>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+  document.getElementById('cancelNote').onclick = closeModal;
+  document.getElementById('confirmNote').onclick = async ()=>{
+    n.title = document.getElementById('enTitle').value;
+    n.content = document.getElementById('enBody').value;
+    n.updatedAt = brToday()+' '+brNow().toTimeString().slice(0,5);
+    await saveNotes(); closeModal(); render();
+    showToast('Nota atualizada');
+  };
+}
+
+/* ============ APARÊNCIA ============ */
+const THEME_FIELDS = [
+  {key:'bg', label:'Fundo geral'},
+  {key:'panel', label:'Painéis / cards'},
+  {key:'panel2', label:'Campos e destaques'},
+  {key:'border', label:'Bordas'},
+  {key:'text', label:'Texto principal'},
+  {key:'textDim', label:'Texto secundário'},
+  {key:'accent', label:'Cor de destaque (lucro)'},
+  {key:'danger', label:'Cor de alerta (prejuízo)'},
+  {key:'gold', label:'Cor "automático"'},
+  {key:'purple', label:'Cor extra'},
+];
+function renderAparencia(){
+  const t = state.theme;
+  return `
+    <h1 class="page-title">Aparência</h1>
+    <p class="page-sub">Personalize as cores, a fonte de título e o layout do CPA Tracker</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="section-title">Cores da plataforma</div>
+        ${THEME_FIELDS.map(f=>`
+          <div class="theme-row">
+            <label>${f.label}</label>
+            <input type="color" class="theme-color" data-key="${f.key}" value="${t[f.key]}">
+          </div>
+        `).join('')}
+        <div class="swatch-preview">${THEME_FIELDS.map(f=>`<span class="sw" style="background:${t[f.key]}"></span>`).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="section-title">Layout</div>
+        <div class="field">
+          <label>Posição do menu</label>
+          <select id="themeNavPos">
+            <option value="lateral" ${t.navPosition==='lateral'?'selected':''}>Lateral (padrão)</option>
+            <option value="topo" ${t.navPosition==='topo'?'selected':''}>Barra superior</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Densidade</label>
+          <select id="themeDensity">
+            <option value="normal" ${t.density==='normal'?'selected':''}>Normal</option>
+            <option value="compact" ${t.density==='compact'?'selected':''}>Compacta</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fonte de título</label>
+          <select id="themeFont">
+            <option value="grotesk" ${t.displayFont==='grotesk'?'selected':''}>Space Grotesk</option>
+            <option value="poppins" ${t.displayFont==='poppins'?'selected':''}>Poppins</option>
+            <option value="sora" ${t.displayFont==='sora'?'selected':''}>Sora</option>
+          </select>
+        </div>
+        <div class="row" style="margin-top:16px;">
+          <button class="btn secondary" id="resetTheme">Restaurar padrão</button>
+          <button class="btn" id="saveTheme">Salvar Aparência</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ============ DADOS (backup/config) ============ */
+function renderDados(){
+  return `
+    <h1 class="page-title">Dados</h1>
+    <p class="page-sub">Backup, exportação e reset completo do aplicativo</p>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="section-title">Exportar tudo (backup completo)</div>
+        <p style="font-size:13px;color:var(--text-dim);">Gera um arquivo .json com casas, registros, metas e anotações. Guarde antes de fazer mudanças grandes.</p>
+        <button class="btn" id="exportAll">Exportar Backup (.json)</button>
+      </div>
+      <div class="card">
+        <div class="section-title">Importar backup</div>
+        <p style="font-size:13px;color:var(--text-dim);">Substitui todos os dados atuais pelos dados do arquivo .json selecionado.</p>
+        <input type="file" id="importFile" accept="application/json">
+      </div>
+      <div class="card">
+        <div class="section-title">Exportar registros (.csv)</div>
+        <p style="font-size:13px;color:var(--text-dim);">Mesmo formato do arquivo original que você importou.</p>
+        <button class="btn secondary" id="exportAllCSV">Exportar CSV</button>
+      </div>
+      <div class="card">
+        <div class="section-title">Zona de risco</div>
+        <p style="font-size:13px;color:var(--text-dim);">Apaga todos os dados salvos neste navegador e recomeça do zero.</p>
+        <button class="btn danger" id="resetAll">Resetar tudo</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ============ HANDLERS ============ */
+function attachHandlers(){
+  // Dashboard
+  document.querySelectorAll('.pill[data-preset]').forEach(p=>{
+    p.addEventListener('click', ()=>{ state.dashRange=p.dataset.preset; state.dashFrom=null; state.dashTo=null; render(); });
+  });
+  const dFrom = document.getElementById('dashFrom'), dTo = document.getElementById('dashTo');
+  if(dFrom) dFrom.addEventListener('change', ()=>{ state.dashFrom=dFrom.value; if(state.dashTo) render(); });
+  if(dTo) dTo.addEventListener('change', ()=>{ state.dashTo=dTo.value; if(state.dashFrom) render(); });
+  const clearRange = document.getElementById('clearRange');
+  if(clearRange) clearRange.addEventListener('click', ()=>{ state.dashFrom=null; state.dashTo=null; render(); });
+
+  // Novo Registro
+  const fHouse = document.getElementById('fHouse');
+  if(fHouse){
+    ['fHouse','fDebit','fCredit'].forEach(id=>document.getElementById(id).addEventListener('input', updateResumo));
+    updateResumo();
+    document.getElementById('saveRegistro').addEventListener('click', async ()=>{
+      const hName = fHouse.value;
+      const h = houseByName(hName);
+      const date = document.getElementById('fDate').value || brToday();
+      const debit = parseFloat(document.getElementById('fDebit').value)||0;
+      const credit = parseFloat(document.getElementById('fCredit').value)||0;
+      const obs = document.getElementById('fObs').value;
+      let net;
+      if(h.autoProfit!=null) net = h.autoProfit;
+      else net = h.cpa - debit + credit;
+      state.records.push({
+        id: uid(), date, house: h.name, cpa: h.cpa,
+        debit: h.autoProfit!=null?0:debit, credit: h.autoProfit!=null?0:credit,
+        net, obs, createdAt: Date.now().toString()
+      });
+      await saveRecords();
+      showToast('Registro salvo com sucesso');
+      state.tab='historico'; render();
+    });
+  }
+
+  // Histórico
+  const hBusca = document.getElementById('hBusca');
+  if(hBusca){
+    hBusca.addEventListener('input', ()=>{ state.histFilters.busca=hBusca.value; render(); });
+    document.getElementById('hCasa').addEventListener('change', e=>{ state.histFilters.casa=e.target.value; render(); });
+    document.getElementById('hTipo').addEventListener('change', e=>{ state.histFilters.tipo=e.target.value; render(); });
+    document.getElementById('hFluxo').addEventListener('change', e=>{ state.histFilters.fluxo=e.target.value; render(); });
+    document.getElementById('hDe').addEventListener('change', e=>{ state.histFilters.de=e.target.value; render(); });
+    document.getElementById('hAte').addEventListener('change', e=>{ state.histFilters.ate=e.target.value; render(); });
+    document.getElementById('hClear').addEventListener('click', ()=>{ state.histFilters={casa:'',tipo:'',de:'',ate:'',busca:'',fluxo:''}; render(); });
+    document.getElementById('hExport').addEventListener('click', ()=>{
+      const f = state.histFilters;
+      const recs = filteredRecords(f.de||'0000-01-01', f.ate||'9999-12-31', f);
+      exportCSV(recs);
+    });
+    document.querySelectorAll('.edit-rec').forEach(b=>b.addEventListener('click', ()=>openEditModal(b.dataset.id)));
+    document.querySelectorAll('.del-rec').forEach(b=>b.addEventListener('click', async ()=>{
+      if(confirm('Tem certeza que quer excluir este registro? Essa ação não pode ser desfeita.')){
+        state.records = state.records.filter(r=>r.id!==b.dataset.id);
+        await saveRecords(); render(); showToast('Registro excluído');
+      }
+    }));
+  }
+
+  // Casas
+  const addHouseBtn = document.getElementById('addHouse');
+  if(addHouseBtn){
+    addHouseBtn.addEventListener('click', async ()=>{
+      const name = document.getElementById('nHouseName').value.trim();
+      if(!name){ showToast('Digite um nome para a casa'); return; }
+      if(houseByName(name)){ showToast('Já existe uma casa com esse nome'); return; }
+      const cpa = parseFloat(document.getElementById('nHouseCpa').value)||0;
+      const autoVal = document.getElementById('nHouseAuto').value;
+      const color = document.getElementById('nHouseColor').value || '#4f9dde';
+      state.houses.push({ id:uid(), name, cpa, autoProfit: autoVal===''?null:parseFloat(autoVal), color });
+      await saveHouses(); render(); showToast('Casa adicionada');
+    });
+    document.querySelectorAll('.edit-house').forEach(b=>b.addEventListener('click', ()=>openHouseEdit(b.dataset.name)));
+    document.querySelectorAll('.del-house').forEach(b=>b.addEventListener('click', async ()=>{
+      if(confirm(`Excluir a casa "${b.dataset.name}"? Os registros já feitos não serão apagados.`)){
+        state.houses = state.houses.filter(h=>h.name!==b.dataset.name);
+        await saveHouses(); render(); showToast('Casa excluída');
+      }
+    }));
+  }
+
+  // Metas
+  const addGoalBtn = document.getElementById('addGoal');
+  if(addGoalBtn){
+    addGoalBtn.addEventListener('click', async ()=>{
+      const name = document.getElementById('gName').value.trim();
+      const target = parseFloat(document.getElementById('gTarget').value);
+      if(!name || !target){ showToast('Preencha nome e valor alvo'); return; }
+      state.goals.push({ id:uid(), name, target, house: document.getElementById('gHouse').value, metric: document.getElementById('gMetric').value });
+      await saveGoals(); render(); showToast('Meta criada');
+    });
+    document.querySelectorAll('.del-goal').forEach(b=>b.addEventListener('click', async ()=>{
+      state.goals = state.goals.filter(g=>g.id!==b.dataset.id);
+      await saveGoals(); render();
+    }));
+  }
+
+  // Notas
+  const addNoteBtn = document.getElementById('addNote');
+  if(addNoteBtn){
+    addNoteBtn.addEventListener('click', async ()=>{
+      const title = document.getElementById('noteTitle').value.trim();
+      const content = document.getElementById('noteBody').value.trim();
+      if(!title && !content) return;
+      state.notes.push({ id:uid(), title, content, updatedAt: brToday()+' '+brNow().toTimeString().slice(0,5) });
+      await saveNotes(); render(); showToast('Nota adicionada');
+    });
+    document.querySelectorAll('.edit-note').forEach(b=>b.addEventListener('click', ()=>openNoteEdit(b.dataset.id)));
+    document.querySelectorAll('.del-note').forEach(b=>b.addEventListener('click', async ()=>{
+      state.notes = state.notes.filter(n=>n.id!==b.dataset.id);
+      await saveNotes(); render();
+    }));
+  }
+
+  // Dados
+  const exportAllBtn = document.getElementById('exportAll');
+  if(exportAllBtn){
+    exportAllBtn.addEventListener('click', ()=>{
+      const data = { houses:state.houses, records:state.records, goals:state.goals, notes:state.notes, exportedAt: new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href=url; a.download=`cpa_tracker_backup_${brToday()}.json`; a.click();
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById('exportAllCSV').addEventListener('click', ()=>exportCSV(state.records));
+    document.getElementById('importFile').addEventListener('change', (e)=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async (evt)=>{
+        try{
+          const data = JSON.parse(evt.target.result);
+          if(!confirm('Isso vai substituir todos os dados atuais. Continuar?')) return;
+          state.houses = data.houses || state.houses;
+          state.records = data.records || [];
+          state.goals = data.goals || [];
+          state.notes = data.notes || [];
+          await persistAll();
+          render();
+          showToast('Backup importado com sucesso');
+        }catch(err){ alert('Arquivo inválido: '+err.message); }
+      };
+      reader.readAsText(file);
+    });
+    document.getElementById('resetAll').addEventListener('click', async ()=>{
+      if(confirm('Isso vai apagar TODOS os dados salvos. Tem certeza?')){
+        state.houses = SEED_HOUSES; state.records = []; state.goals = []; state.notes = [];
+        await persistAll();
+        render();
+        showToast('Dados resetados');
+      }
+    });
+  }
+
+  // Aparência
+  const themeColors = document.querySelectorAll('.theme-color');
+  if(themeColors.length){
+    themeColors.forEach(inp=>{
+      inp.addEventListener('input', ()=>{ state.theme[inp.dataset.key]=inp.value; applyTheme(); });
+    });
+    document.getElementById('themeNavPos').addEventListener('change', e=>{ state.theme.navPosition=e.target.value; applyTheme(); });
+    document.getElementById('themeDensity').addEventListener('change', e=>{ state.theme.density=e.target.value; applyTheme(); });
+    document.getElementById('themeFont').addEventListener('change', e=>{ state.theme.displayFont=e.target.value; applyTheme(); });
+    document.getElementById('saveTheme').addEventListener('click', async ()=>{ await saveTheme(); showToast('Aparência salva'); });
+    document.getElementById('resetTheme').addEventListener('click', async ()=>{
+      state.theme = { ...DEFAULT_THEME };
+      await saveTheme();
+      render();
+      showToast('Aparência restaurada');
+    });
+  }
+
+  document.getElementById('modalBg').addEventListener('click', (e)=>{ if(e.target.id==='modalBg') closeModal(); });
+}
+
+/* ============ INIT ============ */
+(async function init(){
+  await loadState();
+  render();
+})();
+</script>
+</body>
+</html>
